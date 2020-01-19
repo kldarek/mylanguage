@@ -23,7 +23,7 @@ def read(fname):
 
 
 setup(
-    name="language",
+    name="mylanguage",
     version="0.0.1.dev",
     packages=find_packages(),
     description="Google AI Language.",
