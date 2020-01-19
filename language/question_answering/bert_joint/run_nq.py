@@ -1184,12 +1184,13 @@ def compute_predictions(example):
         summary.cls_token_score = (
             result["start_logits"][0] + result["end_logits"][0])
         summary.answer_type_logits = result["answer_type_logits"]
+        answer_type = int(np.argmax(summary.answer_type_logits))
         start_span = token_map[start_index]
         end_span = token_map[end_index] + 1
 
         # Span logits minus the cls logits seems to be close to the best.
         score = summary.short_span_score - summary.cls_token_score
-        predictions.append((score, summary, start_span, end_span))
+        predictions.append((score, summary, start_span, end_span, answer_type))
 
   # Default empty prediction.
   score = -10000.0
@@ -1198,7 +1199,7 @@ def compute_predictions(example):
   summary = ScoreSummary()
 
   if predictions:
-    score, summary, start_span, end_span = sorted(predictions, reverse=True)[0]
+    score, summary, start_span, end_span, answer_type = sorted(predictions, reverse=True)[0]
     short_span = Span(start_span, end_span)
     for c in example.candidates:
       start = short_span.start_token_idx
@@ -1206,6 +1207,13 @@ def compute_predictions(example):
       if c["top_level"] and c["start_token"] <= start and c["end_token"] >= end:
         long_span = Span(c["start_token"], c["end_token"])
         break
+    answer = "NONE"
+    if answer_type == 1:
+        answer =  "YES"
+    elif answer_type == 2:
+        answer =  "NO"
+
+
 
   summary.predicted_label = {
       "example_id": example.example_id,
@@ -1223,7 +1231,7 @@ def compute_predictions(example):
           "end_byte": -1
       }],
       "short_answers_score": score,
-      "yes_no_answer": "NONE"
+      "yes_no_answer": answer
   }
 
   return summary
